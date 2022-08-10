@@ -1,9 +1,11 @@
 package ru.sumin.coroutinestart
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import ru.sumin.coroutinestart.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -16,33 +18,33 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         binding.buttonLoad.setOnClickListener {
-            loadData()
+            binding.progress.isVisible = true
+            binding.buttonLoad.isEnabled = false
+            val jobCity = lifecycleScope.launch {
+                val city = loadCity()
+                binding.tvLocation.text = city
+            }
+            val jobTemp = lifecycleScope.launch {
+                val temp = loadTemperature()
+                binding.tvTemperature.text = temp.toString()
+            }
+
+            lifecycleScope.launch {
+                jobCity.join()
+                jobTemp.join()
+                binding.progress.isVisible = false
+                binding.buttonLoad.isEnabled = true
+            }
         }
     }
 
-    private fun loadData() {
-        binding.progress.isVisible = true
-        binding.buttonLoad.isEnabled = false
-        val city = loadCity()
-        binding.tvLocation.text = city
-        val temp = loadTemperature(city)
-        binding.tvTemperature.text = temp.toString()
-        binding.progress.isVisible = false
-        binding.buttonLoad.isEnabled = true
-    }
-
-    private fun loadCity(): String {
-        Thread.sleep(5000)
+    private suspend fun loadCity(): String {
+        delay(5000)
         return "Moscow"
     }
 
-    private fun loadTemperature(city: String): Int {
-        Toast.makeText(
-            this,
-            getString(R.string.loading_temperature_toast, city),
-            Toast.LENGTH_SHORT
-        ).show()
-        Thread.sleep(5000)
+    private suspend fun loadTemperature(): Int {
+        delay(2000)
         return 17
     }
 }
